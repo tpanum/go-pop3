@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"crypto/tls"
 )
 
 var (
@@ -36,8 +37,14 @@ type Client struct {
 
 // Dial returns a new Client connected to an POP server at addr.
 // The addr must include a port number.
-func Dial(addr string) (*Client, error) {
-	conn, err := net.Dial("tcp", addr)
+func Dial(addr string, ssl bool) (*Client, error) {
+	var conn net.Conn
+	var err error
+	if ssl {
+		conn, err = tls.Dial("tcp", addr, nil)
+	} else {
+		conn, err = net.Dial("tcp", addr)
+	}
 
 	if err != nil {
 		return nil, err
@@ -203,8 +210,8 @@ func (c *Client) Quit() error {
 // ReceiveMail connects to the server at addr,
 // and authenticates with user and pass,
 // and calling receiveFn for each mail.
-func ReceiveMail(addr, user, pass string, receiveFn ReceiveMailFunc) error {
-	c, err := Dial(addr)
+func ReceiveMail(addr, user, pass string, ssl bool, receiveFn ReceiveMailFunc) error {
+	c, err := Dial(addr, ssl)
 
 	if err != nil {
 		return err
